@@ -4,7 +4,6 @@ import Prelude
 import FPPrac.Graphics
 import FPPrac.Events
 import System.FilePath (splitPath, dropExtension)
-import Parser
 import Data.List
 import Debug.Trace
 
@@ -60,7 +59,7 @@ handleEvent store (Prompt ("Load game", filename))
     | otherwise      = (store {process=DoingNothing, errorMsg=""}, [])
 
 --- Unhandled event handler
-handleEvent store input = (store, [
+handleEvent store input = (store, [])
         
 -----------------------------------------------------------
 
