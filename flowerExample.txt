@@ -1,0 +1,16 @@
+do square :w
+  repeat 2 
+    repeat 2
+      forward :w 
+      right 90
+    end
+  end
+end
+do flower 
+  repeat 36
+    right 10
+    square 60
+  end
+end
+pendown
+flower

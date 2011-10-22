@@ -1,5 +1,6 @@
 pendown
 repeat 20
+sleep 5
 forward 50
 right 150
 forward 60
