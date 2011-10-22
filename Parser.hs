@@ -5,6 +5,7 @@ import Turtle
 import Data.List
 import FPPrac.Graphics
 import qualified Data.Map as Map
+import Data.Char (isSpace,isDigit)
 
 nativeFuncs = ["forward","left","right","move","pendown","penup","color"]
 
@@ -51,34 +52,29 @@ strToRepeat pFuncs ls
         count   = read(head elems)
         acs     = concat $ replicate count (parseAc pFuncs (tail cmds))
         
- 
+
+-- nativeStrToAction takes a string that contains a native function and converts it to one action
 nativeStrToAction :: String -> Action
-nativeStrToAction ('f':'o':'r':'w':'a':'r':'d':' ':str)
-    | length (words str) == 1 = Forward (read str)
-    | otherwise = error "Wrong use of forward."
-nativeStrToAction ('l':'e':'f':'t':' ':str)
-    | length (words str) == 1 = Turn (read str)
-    | otherwise = error "Wrong use of left."
-nativeStrToAction ('r':'i':'g':'h':'t':' ':str)
-    | length (words str) == 1 = Turn (360-(read str))
-    | otherwise = error "Wrong use of right."
-nativeStrToAction ('m':'o':'v':'e':' ':str)
-    | length args == 2 = GoTo (read (head args)) (read (args !! 1))
-    | otherwise = error "Wrong use of move."
-    where
-        args = (words str)
-nativeStrToAction ('p':'e':'n':'d':'o':'w':'n':[]) = PenDown
-nativeStrToAction ('p':'e':'n':'u':'p':[]) = PenUp
-nativeStrToAction ('c':'o':'l':'o':'r':' ':str)
-    | length args == 3 = ChangeColor (makeColor8 (read (head args)) (read (args !! 1)) (read (args !! 2)) 255)
-    | otherwise = error "Wrong use of coleur."
-    where
-        args = (words str)
-        
-pFuncToAction :: String -> ([Action],String)
-pFuncToAction pFuncs line = acs
-    where
-        elems = words line
-        params = tail elems
-        Just (arglist,strs) = lookup (head elems) pFuncs -- `elem` is al gedaan.
-        
+nativeStrToAction str = nativeStrToAction' cmd args
+	where
+		(cmd:args) = words str
+
+-- Function that takes the function name and the argument list and retunrs the action
+nativeStrToAction' :: String -> [String] -> Action
+nativeStrToAction' "forward" [s]   | isNumber s = Forward (read s)
+nativeStrToAction' "forward" _                  = error "Wrong use of forward. Expected one numeric argument."
+nativeStrToAction' "left" [s]      | isNumber s = Turn (read s)
+nativeStrToAction' "left" _                     = error "Wrong use of left. Expected one numeric argument."
+nativeStrToAction' "right" [s]     | isNumber s = Turn (360-(read s))
+nativeStrToAction' "right" _                    = error "Wrong use of right. Expected one numeric argument."
+nativeStrToAction' "move" [x,y]    | isNumber x && isNumber y = GoTo (read x) (read y)
+nativeStrToAction' "move" _                                   = error "Wrong use of move. Expected two numeric arguments."
+nativeStrToAction' "pendown" []    = PenDown
+nativeStrToAction' "pendown" _     = error "Wrong use of pendown. Expected no arguments."
+nativeStrToAction' "penup" []      = PenUp
+nativeStrToAction' "penup" _       = error "Wrong use of penup. Expected no arguments."
+nativeStrToAction' "color" [r,g,b] | isNumber r && isNumber g && isNumber b = ChangeColor (makeColor8 (read r) (read g) (read b) 255)
+nativeStrToAction' "color" _                                                = error "Wrong use of color. Expected three numeric arguments."
+nativeStrToAction' x _             = error ("Incorrect call of nativeStrToAction: " ++ x ++ " is not a valid function.")
+
+isNumber s = all isDigit s
