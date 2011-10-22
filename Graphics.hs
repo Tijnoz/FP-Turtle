@@ -25,20 +25,18 @@ squareTop y = (y * (-50) + boardTop)
 squareLeft x = (x * 50 + boardLeft)
 
 initStore = Store { code     = ""
-			       , turtle   = iniTurtle
-                   , name     = ""
-                   , errorMsg = ""
-                   }
+                  , turtle   = iniTurtle
+                  , name     = ""
+                  , errorMsg = ""
+                  }
 
 -----------------------------------------------------------
 
 -- Redraws the entire window (i.e. a drawBoard and a drawBottomLine)
 redraw :: Store -> Picture
-redraw store = Pictures $ [drawCode store, drawInformation store]
+redraw store = Pictures $ [clearBoard, drawInformation store] -- drawCode store, 
 
--- Draws the code
-drawCode :: Store -> Picture
-drawCode store = Pictures $ execTurtle ((turtle store) {actions=(parseAcs (code store))})
+clearBoard = Color white $ rectangleSolid 1000 1000
 
 -- Draws the information in the top
 drawInformation :: Store -> Picture
@@ -47,18 +45,15 @@ drawInformation store
       [ Translate (-260) 260 $ Color white $ rectangleSolid 250 50
       , Translate (-260) 260 $ Color black $ rectangleWire 250 50
       , Translate (-380) 270 $ Color blue  $ Scale 0.11 0.11 $ Text $ (name store)
-      --, Translate (-380) 255 $ Color red   $ Scale 0.11 0.11 $ Text $ (errorMsg store)
+      , Translate (-380) 255 $ Color red   $ Scale 0.11 0.11 $ Text $ (errorMsg store)
       , Translate (-380) 240 $ Color black $ Scale 0.09 0.09 $ Text $ "Use 'l' to load and parse a file"
       ]
-	  
-drawErr :: String -> Picture
-drawErr err = Translate (-380) 255 $ Color red $ Scale 0.11 0.11 $ Text err
         
         
 -- Event handler
 handleEvent :: Store -> Input -> (Store, [Output])
 
---- Load Sudoku board
+--- Load code
 handleEvent store (KeyIn 'l')
     = (store {errorMsg=""}, [GraphPrompt ("Load code", "filename")])
 
@@ -70,12 +65,22 @@ handleEvent store (Prompt ("Load code", filename))
 --- Handle file load
 handleEvent store (File filename (TXTFile input))
     | input /= "" = (store', [DrawPicture $ redraw store'])
-    | otherwise   = (store,[])
+    | otherwise   = (store, [])
     where
-        store' = store {code=input, name=filename, errorMsg=""}
-	
+        acs = parseAcs input
+        t = iniTurtle {actions=acs}
+        store' = store {turtle=t, code=input, name=filename, errorMsg=""}
+    
+--- Handle drawing of picture if not done yet
+handleEvent store@(Store {turtle=t@(Turtle {actions=(ac:acs)})}) _ = (store', [DrawPicture $ Pictures [p,drawInformation store']])
+    where
+        (t', p) = execAction t ac
+        t'' = t' {actions=acs}
+        store' = store {turtle=t'', errorMsg=if null acs then "Done drawing picture" else ""}
+
+
 --- Unhandled event handler
-handleEvent store input = (store, [])
+handleEvent store _ = (store, [])
         
 -----------------------------------------------------------
 
@@ -84,5 +89,5 @@ doShow fn = installEventHandler "Let rut!" handleEvent store startPic 10
     where
         store = initStore
         startPic = Pictures $ [redraw store]
-		
+        
 main = doShow ""
