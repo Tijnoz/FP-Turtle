@@ -6,12 +6,16 @@ import FPPrac.Events
 import System.FilePath (splitPath, dropExtension)
 import Data.List
 import Debug.Trace
+import Parser
+import Turtle
+import qualified Control.Exception as E
 
 data Process = EnteringValue | DoingNothing deriving (Eq, Show)
 
 data Store = Store
-  { board             :: Board
+  { code              :: String
   , turtle            :: Turtle
+  , name              :: String
   , errorMsg          :: String
   }
 
@@ -20,30 +24,35 @@ boardLeft = (-230)
 squareTop y = (y * (-50) + boardTop)
 squareLeft x = (x * 50 + boardLeft)
 
-initStore ah = Store { board = emptyBoard
-                     , name = ""
-                     , errorMsg = ""
-                     }
+initStore = Store { code     = ""
+			       , turtle   = iniTurtle
+                   , name     = ""
+                   , errorMsg = ""
+                   }
 
+-----------------------------------------------------------
 
--- Draws the bottom line
-bottomLineHeight = 25
-bottomTextHeight = 10
-        
-drawBottomLine :: Store -> Picture
-drawBottomLine store 
+-- Redraws the entire window (i.e. a drawBoard and a drawBottomLine)
+redraw :: Store -> Picture
+redraw store = Pictures $ [drawCode store, drawInformation store]
+
+-- Draws the code
+drawCode :: Store -> Picture
+drawCode store = Pictures $ execTurtle ((turtle store) {actions=(parseAcs (code store))})
+
+-- Draws the information in the top
+drawInformation :: Store -> Picture
+drawInformation store 
     = Pictures 
-      [ Translate 0 (-300 + bottomLineHeight / 2) $ Color white $ rectangleSolid 800 bottomLineHeight
-      , Color black $ Line [(-400,height1),(400,height1)] -- top
-      , Color black $ Line [(-300,height1),(-300,-300)] -- left
-      , Color black $ Line [(145,height1),(145,-300)] -- right
-      , Translate (-394) height2 $ Color blue  $ Scale 0.11 0.11 $ Text $ (name store)
-      , Translate (-290) height2 $ Color black $ Scale 0.09 0.09 $ Text "[n]ew [s]ave (a[S]) [l]oad s[o]lve [h]int [x]sudoku op[t]ions [b]acktracking"
-      , Translate 155 height2 $ Color red   $ Scale 0.11 0.11 $ Text (errorMsg store)
+      [ Translate (-260) 260 $ Color white $ rectangleSolid 250 50
+      , Translate (-260) 260 $ Color black $ rectangleWire 250 50
+      , Translate (-380) 270 $ Color blue  $ Scale 0.11 0.11 $ Text $ (name store)
+      --, Translate (-380) 255 $ Color red   $ Scale 0.11 0.11 $ Text $ (errorMsg store)
+      , Translate (-380) 240 $ Color black $ Scale 0.09 0.09 $ Text $ "Use 'l' to load and parse a file"
       ]
-    where
-        height1 = -300 + bottomLineHeight
-        height2 = -300 + bottomTextHeight
+	  
+drawErr :: String -> Picture
+drawErr err = Translate (-380) 255 $ Color red $ Scale 0.11 0.11 $ Text err
         
         
 -- Event handler
@@ -51,24 +60,29 @@ handleEvent :: Store -> Input -> (Store, [Output])
 
 --- Load Sudoku board
 handleEvent store (KeyIn 'l')
-    = (store {process=DoingNothing, errorMsg=""}, [GraphPrompt ("Load game", "filename")])
+    = (store {errorMsg=""}, [GraphPrompt ("Load code", "filename")])
 
---- Actual loading handled by Sudoku Handler
-handleEvent store (Prompt ("Load game", filename))
-    | filename /= "" = (store {process=DoingNothing, errorMsg=""}, [ReadFile filename (TXTFile "")])
-    | otherwise      = (store {process=DoingNothing, errorMsg=""}, [])
-
+--- Handle prompt
+handleEvent store (Prompt ("Load code", filename))
+    | filename /= "" = (store {errorMsg=""}, [ReadFile filename (TXTFile "")])
+    | otherwise      = (store {errorMsg=""}, [])
+  
+--- Handle file load
+handleEvent store (File filename (TXTFile input))
+    | input /= "" = (store', [DrawPicture $ redraw store'])
+    | otherwise   = (store,[])
+    where
+        store' = store {code=input, name=filename, errorMsg=""}
+	
 --- Unhandled event handler
 handleEvent store input = (store, [])
         
 -----------------------------------------------------------
 
 -- Draw the screen and install the event handler
-doShow ah = installEventHandler "Let rut!" handleEvent store startPic 10
+doShow fn = installEventHandler "Let rut!" handleEvent store startPic 10
     where
-        store = initStore ah
-        Store {board=board} = store
-        startPic = Pictures
-          [ drawBoard False board
-          , drawBottomLine store
-          ]
+        store = initStore
+        startPic = Pictures $ [redraw store]
+		
+main = doShow ""

@@ -25,6 +25,7 @@ iniTurtle = Turtle { x          = 0
                    , actions    = []
                    }
 
+execTurtle :: Turtle -> [Picture]
 execTurtle t@(Turtle {actions=[]}) = []
 execTurtle t@(Turtle {actions=((Forward dist):acs)}) = res ++ (execTurtle t')
     where
