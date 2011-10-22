@@ -17,11 +17,12 @@ parseAcs string = parseAc [] (lines string)
 parseAc :: [ParsedFunction] -> [String] -> [Action]
 parseAc _ [] = []
 parseAc pFuncs str@(l:ls)
-    | key == "do" = parseAc (pFuncs++[dFunc]) dLines
-    | key == "repeat" = rAcs ++ parseAc (pFuncs) rLines
+    | null elems             = parseAc pFuncs ls
+    | key == "do"            = parseAc (pFuncs++[dFunc]) dLines
+    | key == "repeat"        = rAcs ++ parseAc (pFuncs) rLines
     | key `elem` nativeFuncs = nAc : parseAc pFuncs ls
     | key `elem` parsedFuncs = pAcs ++ parseAc pFuncs ls
-    | otherwise = error $ "Unknown key in line: " ++ l
+    | otherwise              = error $ "Unknown key in line: " ++ l
     where
         elems = words l
         key = head elems
