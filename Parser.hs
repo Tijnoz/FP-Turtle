@@ -11,14 +11,14 @@ nativeFuncs = ["forward","left","right","move","pendown","penup","color"]
 parseAcs :: String -> [Action]
 parseAcs string = parseAc [] (lines string)
 
-parseAc :: [((String,[String]),[String])] -> [String] -> [Action]
+parseAc :: [(String,([String],[String]))] -> [String] -> [Action]
 parseAc _ [] = []
 parseAc pFuncs str@(l:ls)
     | key == "do" = parseAc (pFuncs++[dFunc]) dLines
     | key == "repeat" = rAcs ++ parseAc (pFuncs) rLines
     | key `elem` nativeFuncs = nAc : parseAc pFuncs ls
-    -- | key `elem` parsedFuncs = pAcs ++ parseAc pFuncs ls
-    | otherwise = error $ "Wrong syntax in line: " ++ l
+    | key `elem` parsedFuncs = pAcs ++ parseAc pFuncs ls
+    | otherwise = error $ "Unknown key in line: " ++ l
     where
         elems = words l
         key = head elems
@@ -29,17 +29,22 @@ parseAc pFuncs str@(l:ls)
         --
         nAc = nativeStrToAction l --De actie van deze line
         --
-        parsedFuncs = map (fst . fst) pFuncs
+        parsedFuncs = map fst pFuncs
+        pAcs = pFuncToAction pFuncs l
        
 
-strToDo ls = (((name, arglist), tail cmds), (tail ls'))
+strToDo ls 
+    | not (null ls') = ((name, (arglist,tail cmds)), (tail ls'))
+    | otherwise      = error "No 'end' tag found in 'do' block." 
     where
         elems   = tail . words . head $ ls
         name    = head elems
         arglist = tail elems
         (cmds,ls') = span (/="end") ls -- "end" zit nu nog in ls'
  
-strToRepeat pFuncs ls = (acs, (tail ls'))
+strToRepeat pFuncs ls
+    | not (null ls') = (acs, (tail ls'))
+    | otherwise      = error "No 'end' tag found in 'repeat' block."
     where
         (cmds,ls') = span (/="end") ls -- "end" zit nu nog in ls'
         elems   = tail . words . head $ ls
@@ -69,3 +74,11 @@ nativeStrToAction ('c':'o':'l':'o':'r':' ':str)
     | otherwise = error "Wrong use of coleur."
     where
         args = (words str)
+        
+pFuncToAction :: String -> ([Action],String)
+pFuncToAction pFuncs line = acs
+    where
+        elems = words line
+        params = tail elems
+        Just (arglist,strs) = lookup (head elems) pFuncs -- `elem` is al gedaan.
+        
