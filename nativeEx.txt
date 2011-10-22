@@ -1,9 +1,9 @@
 pendown
-repeat 20
+color 150 150 0
 forward 50
 right 150
+color 0 150 150
 forward 60
 right 100
 forward 30
-right 90
 end
