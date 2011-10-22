@@ -21,6 +21,7 @@ parseAc :: [ParsedFunction] -> [String] -> [Action]
 parseAc _ [] = []
 parseAc pFuncs str@(l:ls)
     | null elems             = parseAc pFuncs ls                                        -- Skip empty lines
+    | head l == '#'          = parseAc pFuncs ls                                        -- Skip comments
     | key == "do"            = parseAc (pFuncs++[dFunc]) dLines                         -- Parse do blocks
     | key == "repeat"        = rAcs ++ parseAc (pFuncs) rLines                          -- Parse repeat blocks
     | key `elem` nativeFuncs = nAc ++ parseAc pFuncs ls                                 -- Parse native functions
