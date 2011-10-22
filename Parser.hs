@@ -37,24 +37,32 @@ parseAc pFuncs str@(l:ls)
         pAcs = pFuncToAcs pFuncs l
        
 
-strToDo ls 
-    | not (null ls') = ((name, (arglist,tail cmds)), (tail ls'))
-    | otherwise      = error "No 'end' tag found in 'do' block." 
+strToDo ls = ((name, (arglist,tail cmds)), ls')
     where
         elems   = tail . words . head $ ls
         name    = head elems
         arglist = tail elems
-        (cmds,ls') = span (/="end") ls -- "end" zit nu nog in ls'
+        (cmds,ls') = splitEnd ls -- "end" is not in ls' anymore
  
-strToRepeat pFuncs ls
-    | not (null ls') = (acs, (tail ls'))
-    | otherwise      = error "No 'end' tag found in 'repeat' block."
+strToRepeat pFuncs ls = (acs, ls')
     where
-        (cmds,ls') = span (/="end") ls -- "end" zit nu nog in ls'
-        elems   = tail . words . head $ ls
-        count   = read(head elems)
-        acs     = concat $ replicate count (parseAc pFuncs (tail cmds))
-        
+        (cmds,ls') = splitEnd ls -- "end" is not in ls' anymore
+        args  = tail . words . head $ ls
+        count = read(head args)
+        acs   = concat $ replicate count (parseAc pFuncs (tail cmds))
+
+-- Helper method to split a block at the appropriate 'end'
+splitEnd :: [String] -> ([String],[String])
+splitEnd = splitEnd' 0 []
+
+splitEnd' _ bl []                  = error ("No end of block " ++ (head . words . head $ bl) ++ " found")
+splitEnd' c bl (l:ls)
+    | key `elem` ["repeat", "do"] = splitEnd' (c+1) (bl++[l]) ls
+    | key == "end" && c > 1       = splitEnd' (c-1) (bl++[l]) ls
+    | key == "end" && c == 1      = (bl, ls)
+    | otherwise                   = splitEnd' (c) (bl++[l]) ls
+    where
+        key = head . words $ l
 
 -- nativeStrToAction takes a string that contains a native function and converts it to one action
 nativeStrToAction :: String -> [Action]
