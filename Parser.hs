@@ -6,6 +6,7 @@ import Data.List
 import FPPrac.Graphics
 import qualified Data.Map as Map
 import Data.Char (isSpace,isDigit)
+import Debug.Trace
 
 type ParsedFunction = (String,([String],[String]))
 
@@ -44,17 +45,25 @@ strToDo ls
         elems   = tail . words . head $ ls
         name    = head elems
         arglist = tail elems
-        (cmds,ls') = span (/="end") ls -- "end" zit nu nog in ls'
+        (cmds,ls') = findEnd 0 ([],ls) -- "end" zit nu nog in ls'
  
 strToRepeat pFuncs ls
     | not (null ls') = (acs, (tail ls'))
     | otherwise      = error "No 'end' tag found in 'repeat' block."
     where
-        (cmds,ls') = span (/="end") ls -- "end" zit nu nog in ls'
-        elems   = tail . words . head $ ls
+        (cmds,ls') = findEnd 0 ([],ls) -- "end" zit nu nog in ls'
+        elems   = tail . words . head $ cmds
         count   = read(head elems)
         acs     = concat $ replicate count (parseAc pFuncs (tail cmds))
-        
+
+findEnd _ (_,[]) = error "No end found."
+findEnd d (p,(l:ls))
+    | key == "repeat" || key == "do"             = trace (show $ d+1) $ findEnd (d+1) (p++[l],ls)
+    | key == "end" && d > 1                      = trace (show $ d-1) $ findEnd (d-1) (p++[l],ls)
+    | key == "end"                               = (p,(l:ls))
+    | otherwise                                  = findEnd d (p++[l],ls)
+    where
+        key = head . words $ l
 
 -- nativeStrToAction takes a string that contains a native function and converts it to one action
 nativeStrToAction :: String -> [Action]
