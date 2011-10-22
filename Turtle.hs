@@ -8,48 +8,57 @@ data Turtle = Turtle
     { x         :: Float
     , y         :: Float
     , pendown   :: Bool
-    , col     :: Color
+    , col       :: Color
     , angle     :: Int  --Must be 0-2pi
     , actions   :: [Action]
     } deriving (Show, Eq)
     
-data Action = Forward Float | Turn Int | PenUp | PenDown | ChangeColor Color | GoTo Float Float
+data Action = Forward Float | Turn Int | PenUp | PenDown | ChangeColor Color | GoTo Float Float | NoOp | Clear
     deriving (Show, Eq)
 
 
 iniTurtle = Turtle { x          = 0
                    , y          = 0
                    , pendown    = False
-                   , col      = black
+                   , col        = black
                    , angle      = 90
                    , actions    = []
                    }
-
+                   
+                  
 execTurtle :: Turtle -> [Picture]
-execTurtle t@(Turtle {actions=[]}) = []
-execTurtle t@(Turtle {actions=((Forward dist):acs)}) = res ++ (execTurtle t')
+execTurtle t@(Turtle {actions=[]})      = []
+execTurtle t@(Turtle {actions=(a:acs)}) = p : (execTurtle t'')
+    where
+        (t', p) = execAction t a
+        t'' = t' {actions=acs}
+
+execAction :: Turtle -> Action -> (Turtle, Picture)
+execAction t (Forward dist) = (t', res)
     where
         Turtle {x=x,y=y,pendown=pendown,col=col,angle=angle} = t
         x' = x + dist * (cos $ degToRad (fromIntegral angle))
         y' = y + dist * (sin $ degToRad (fromIntegral angle))
-        res = if pendown then [Color col $ Line [(x,y),(x',y')]] else []
-        t' = t {x=x',y=y',actions=acs}
+        res = if pendown then (Color col $ Line [(x,y),(x',y')]) else Blank
+        t' = t {x=x',y=y'}
 
-execTurtle t@(Turtle {actions=((GoTo x' y'):acs)}) = res ++ (execTurtle t')
+execAction t (GoTo x' y') = (t', res)
     where
         Turtle {x=x,y=y,pendown=pendown,col=col} = t
-        res = if pendown then [Color col $ Line [(x,y),(x',y')]] else []
-        t' = t {x=x',y=y',actions=acs}
+        res = if pendown then (Color col $ Line [(x,y),(x',y')]) else Blank
+        t' = t {x=x',y=y'}
         
 -- @require dAng >= 0
-execTurtle t@(Turtle {actions=((Turn dAng):acs)}) = execTurtle t'
+execAction t (Turn dAng) = (t', Blank)
     where
         Turtle {angle=angle} = t
         a' = ((angle+(dAng)) `mod` (360))
-        t' = t {angle=a',actions=acs}
+        t' = t {angle=a'}
         
-execTurtle t@(Turtle {actions=((PenUp):acs)})         = execTurtle $ t {pendown=False,actions=acs}
-execTurtle t@(Turtle {actions=((PenDown):acs)})       = execTurtle $ t {pendown=True,actions=acs}
-execTurtle t@(Turtle {actions=((ChangeColor c):acs)}) = execTurtle $ t {col=c,actions=acs}        
-        
+execAction t (PenUp)         = (t {pendown=False}, Blank)
+execAction t (PenDown)       = (t {pendown=True}, Blank)
+execAction t (ChangeColor c) = (t {col=c}, Blank)   
+execAction t (NoOp)          = (t, Blank)
+execAction t (Clear)         = (t, Color white $ rectangleSolid 1000 1000)
+
 degToRad deg = deg * pi / 180

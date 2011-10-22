@@ -9,7 +9,7 @@ import Data.Char (isSpace,isDigit)
 
 type ParsedFunction = (String,([String],[String]))
 
-nativeFuncs = ["forward","left","right","move","pendown","penup","color"]
+nativeFuncs = ["forward","left","right","move","pendown","penup","color","sleep","clear"]
 
 parseAcs :: String -> [Action]
 parseAcs string = parseAc [] (lines string)
@@ -19,7 +19,7 @@ parseAc _ [] = []
 parseAc pFuncs str@(l:ls)
     | key == "do" = parseAc (pFuncs++[dFunc]) dLines
     | key == "repeat" = rAcs ++ parseAc (pFuncs) rLines
-    | key `elem` nativeFuncs = nAc : parseAc pFuncs ls
+    | key `elem` nativeFuncs = nAc ++ parseAc pFuncs ls
     | key `elem` parsedFuncs = pAcs ++ parseAc pFuncs ls
     | otherwise = error $ "Unknown key in line: " ++ l
     where
@@ -56,27 +56,31 @@ strToRepeat pFuncs ls
         
 
 -- nativeStrToAction takes a string that contains a native function and converts it to one action
-nativeStrToAction :: String -> Action
+nativeStrToAction :: String -> [Action]
 nativeStrToAction str = nativeStrToAction' cmd args
-	where
-		(cmd:args) = words str
+    where
+        (cmd:args) = words str
 
 -- Function that takes the function name and the argument list and retunrs the action
-nativeStrToAction' :: String -> [String] -> Action
-nativeStrToAction' "forward" [s]   | isNumber s = Forward (read s)
+nativeStrToAction' :: String -> [String] -> [Action]
+nativeStrToAction' "forward" [s]   | isNumber s = [Forward (read s)]
 nativeStrToAction' "forward" _                  = error "Wrong use of forward. Expected one numeric argument."
-nativeStrToAction' "left" [s]      | isNumber s = Turn (read s)
+nativeStrToAction' "left" [s]      | isNumber s = [Turn (read s)]
 nativeStrToAction' "left" _                     = error "Wrong use of left. Expected one numeric argument."
-nativeStrToAction' "right" [s]     | isNumber s = Turn (360-(read s))
+nativeStrToAction' "right" [s]     | isNumber s = [Turn (360-(read s))]
 nativeStrToAction' "right" _                    = error "Wrong use of right. Expected one numeric argument."
-nativeStrToAction' "move" [x,y]    | isNumber x && isNumber y = GoTo (read x) (read y)
+nativeStrToAction' "move" [x,y]    | isNumber x && isNumber y = [GoTo (read x) (read y)]
 nativeStrToAction' "move" _                                   = error "Wrong use of move. Expected two numeric arguments."
-nativeStrToAction' "pendown" []    = PenDown
+nativeStrToAction' "pendown" []    = [PenDown]
 nativeStrToAction' "pendown" _     = error "Wrong use of pendown. Expected no arguments."
-nativeStrToAction' "penup" []      = PenUp
+nativeStrToAction' "penup" []      = [PenUp]
 nativeStrToAction' "penup" _       = error "Wrong use of penup. Expected no arguments."
-nativeStrToAction' "color" [r,g,b] | isNumber r && isNumber g && isNumber b = ChangeColor (makeColor8 (read r) (read g) (read b) 255)
+nativeStrToAction' "color" [r,g,b] | isNumber r && isNumber g && isNumber b = [ChangeColor (makeColor8 (read r) (read g) (read b) 255)]
 nativeStrToAction' "color" _                                                = error "Wrong use of color. Expected three numeric arguments."
+nativeStrToAction' "sleep" [s]     | isNumber s = replicate (read s) NoOp
+nativeStrToAction' "sleep" _                    = error "Wrong use of sleep. Expected one numeric argument."
+nativeStrToAction' "clear" []      = [Clear]
+nativeStrToAction' "clear" _       = error "Wrong use of clear. Expected no arguments."
 nativeStrToAction' x _             = error ("Incorrect call of nativeStrToAction: " ++ x ++ " is not a valid function.")
 
 isNumber s = all isDigit s
