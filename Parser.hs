@@ -7,12 +7,14 @@ import FPPrac.Graphics
 import qualified Data.Map as Map
 import Data.Char (isSpace,isDigit)
 
+type ParsedFunction = (String,([String],[String]))
+
 nativeFuncs = ["forward","left","right","move","pendown","penup","color"]
 
 parseAcs :: String -> [Action]
 parseAcs string = parseAc [] (lines string)
 
-parseAc :: [(String,([String],[String]))] -> [String] -> [Action]
+parseAc :: [ParsedFunction] -> [String] -> [Action]
 parseAc _ [] = []
 parseAc pFuncs str@(l:ls)
     | key == "do" = parseAc (pFuncs++[dFunc]) dLines
@@ -31,7 +33,7 @@ parseAc pFuncs str@(l:ls)
         nAc = nativeStrToAction l --De actie van deze line
         --
         parsedFuncs = map fst pFuncs
-        pAcs = pFuncToAction pFuncs l
+        pAcs = pFuncToAcs pFuncs l
        
 
 strToDo ls 
@@ -80,9 +82,29 @@ nativeStrToAction' x _             = error ("Incorrect call of nativeStrToAction
 isNumber s = all isDigit s
 
 -- Converts a parsed function to actions
-pFuncToAction :: String -> ([Action],String)
-pFuncToAction pFuncs line = acs
+pFuncToAcs :: [ParsedFunction] -> String -> [Action]
+pFuncToAcs pFuncs l 
+    | length params == (length arglist) = acs
+    | otherwise                         = error ("Wrong arguments for "++(head elems))
     where
-        elems = words line
+        elems = words l
         params = tail elems
         Just (arglist,strs) = lookup (head elems) pFuncs -- `elem` is al gedaan.
+        parseable = mkParsable (zip arglist params) strs
+        acs = parseAc pFuncs parseable
+
+mkParsable argmap [] = []       
+mkParsable argmap (l:ls) = ((head elems)++" "++subParams) : (mkParsable argmap ls)
+    where
+        elems = words l
+        subArgs = tail elems
+        subParams = unwords $ map (argToParam argmap) subArgs
+        
+argToParam argmap arg@(':':_)
+    | may /= Nothing = param
+    | otherwise      = error "Unknown parameter found."
+    where
+        may = lookup arg argmap
+        Just param = may
+        
+argToParam _ arg = arg
