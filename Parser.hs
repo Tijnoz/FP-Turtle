@@ -12,18 +12,20 @@ type ParsedFunction = (String,([String],[String]))
 
 nativeFuncs = ["forward","left","right","move","pendown","penup","color","sleep","clear"]
 
+-- Parses a string into a list of actions
 parseAcs :: String -> [Action]
 parseAcs string = parseAc [] (lines string)
 
+-- Parses a oneliner into a list of actions.
 parseAc :: [ParsedFunction] -> [String] -> [Action]
 parseAc _ [] = []
 parseAc pFuncs str@(l:ls)
-    | null elems             = parseAc pFuncs ls
-    | key == "do"            = parseAc (pFuncs++[dFunc]) dLines
-    | key == "repeat"        = rAcs ++ parseAc (pFuncs) rLines
-    | key `elem` nativeFuncs = nAc ++ parseAc pFuncs ls
-    | key `elem` parsedFuncs = pAcs ++ parseAc pFuncs ls
-    | otherwise              = error $ "Unknown key in line: " ++ l
+    | null elems             = parseAc pFuncs ls                                        -- Skip empty lines
+    | key == "do"            = parseAc (pFuncs++[dFunc]) dLines                         -- Parse do blocks
+    | key == "repeat"        = rAcs ++ parseAc (pFuncs) rLines                          -- Parse repeat blocks
+    | key `elem` nativeFuncs = nAc ++ parseAc pFuncs ls                                 -- Parse native functions
+    | key `elem` parsedFuncs = pAcs ++ parseAc pFuncs ls                                -- Parse previously parsed functions
+    | otherwise              = error $ "Unknown command " ++ key ++ " in line: " ++ l   -- Error!
     where
         elems = words l
         key = head elems
@@ -37,31 +39,34 @@ parseAc pFuncs str@(l:ls)
         parsedFuncs = map fst pFuncs
         pAcs = pFuncToAcs pFuncs l
        
-
-strToDo ls 
-    | not (null ls') = ((name, (arglist,tail cmds)), (tail ls'))
-    | otherwise      = error "No 'end' tag found in 'do' block." 
+-- Parse a do block: returns the code that should be executed when the function is called, and the remaining lines
+strToDo :: [String] -> (ParsedFunction, [String])
+strToDo ls = ((name, (arglist,tail cmds)), ls')
     where
         elems   = tail . words . head $ ls
         name    = head elems
         arglist = tail elems
-        (cmds,ls') = findEnd 0 ([],ls) -- "end" zit nu nog in ls'
+        (cmds,ls') = splitAtEnd ls -- "end" is not in ls' anymore
  
-strToRepeat pFuncs ls
-    | not (null ls') = (acs, (tail ls'))
-    | otherwise      = error "No 'end' tag found in 'repeat' block."
+-- Parse a repeat block
+strToRepeat :: [ParsedFunction] -> [String] -> ([Action], [String])
+strToRepeat pFuncs ls = (acs, ls')
     where
-        (cmds,ls') = findEnd 0 ([],ls) -- "end" zit nu nog in ls'
-        elems   = tail . words . head $ cmds
-        count   = read(head elems)
-        acs     = concat $ replicate count (parseAc pFuncs (tail cmds))
+        (cmds,ls') = splitAtEnd ls -- "end" is not in ls' anymore
+        args  = tail . words . head $ ls
+        count = read(head args)
+        acs   = concat $ replicate count (parseAc pFuncs (tail cmds))
 
-findEnd _ (_,[]) = error "No end found."
-findEnd d (p,(l:ls))
-    | key == "repeat" || key == "do"             = trace (show $ d+1) $ findEnd (d+1) (p++[l],ls)
-    | key == "end" && d > 1                      = trace (show $ d-1) $ findEnd (d-1) (p++[l],ls)
-    | key == "end"                               = (p,(l:ls))
-    | otherwise                                  = findEnd d (p++[l],ls)
+-- Helper method to split a block at the appropriate 'end'
+splitAtEnd :: [String] -> ([String],[String])
+splitAtEnd = splitAtEnd' 0 []
+
+splitAtEnd' _ bl []                  = error $ "No end of block '" ++ (head . words . head $ bl) ++ "' found"
+splitAtEnd' c bl (l:ls)
+    | key `elem` ["repeat", "do"] = splitAtEnd' (c+1) (bl++[l]) ls
+    | key == "end" && c > 1       = splitAtEnd' (c-1) (bl++[l]) ls
+    | key == "end"                = (bl, ls)
+    | otherwise                   = splitAtEnd' (c) (bl++[l]) ls
     where
         key = head . words $ l
 
@@ -95,7 +100,7 @@ nativeStrToAction' x _             = error ("Incorrect call of nativeStrToAction
 
 isNumber s = all isDigit s
 
--- Converts a parsed function to actions
+-- Converts a parsed function to actions. Given are the list of parsed functions and the call.
 pFuncToAcs :: [ParsedFunction] -> String -> [Action]
 pFuncToAcs pFuncs l 
     | length params == (length arglist) = acs
@@ -107,18 +112,22 @@ pFuncToAcs pFuncs l
         parseable = mkParsable (zip arglist params) strs
         acs = parseAc pFuncs parseable
 
+-- Replaces all argument-occurences of keys in the argmap of the given lines to their respective values
+-- Example: argmap = ((":x", 3)) and ls = ["ex :x"], then result is ["ex 3"]
+mkParsable :: [(String, String)] -> [String] -> [String]
 mkParsable argmap [] = []       
 mkParsable argmap (l:ls) = ((head elems)++" "++subParams) : (mkParsable argmap ls)
     where
         elems = words l
         subArgs = tail elems
         subParams = unwords $ map (argToParam argmap) subArgs
-        
+
+-- Checks a parameter whether it starts with :. If it does, it is replaced by its value in the argmap.
+argToParam :: [(String, String)] -> String -> String
 argToParam argmap arg@(':':_)
     | may /= Nothing = param
-    | otherwise      = error "Unknown parameter found."
+    | otherwise      = error $ "Unknown parameter " ++ arg ++ " found."
     where
         may = lookup arg argmap
         Just param = may
-        
 argToParam _ arg = arg
