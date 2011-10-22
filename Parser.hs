@@ -78,3 +78,11 @@ nativeStrToAction' "color" _                                                = er
 nativeStrToAction' x _             = error ("Incorrect call of nativeStrToAction: " ++ x ++ " is not a valid function.")
 
 isNumber s = all isDigit s
+
+-- Converts a parsed function to actions
+pFuncToAction :: String -> ([Action],String)
+pFuncToAction pFuncs line = acs
+    where
+        elems = words line
+        params = tail elems
+        Just (arglist,strs) = lookup (head elems) pFuncs -- `elem` is al gedaan.
