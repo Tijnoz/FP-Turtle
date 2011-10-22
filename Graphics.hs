@@ -8,6 +8,7 @@ import Data.List
 import Debug.Trace
 import Parser
 import Turtle
+import Eval
 import qualified Control.Exception as E
 
 data Process = EnteringValue | DoingNothing deriving (Eq, Show)
@@ -42,8 +43,8 @@ clearBoard = Color white $ rectangleSolid 1000 1000
 drawInformation :: Store -> Picture
 drawInformation store 
     = Pictures 
-      [ Translate (-260) 260 $ Color white $ rectangleSolid 250 50
-      , Translate (-260) 260 $ Color black $ rectangleWire 250 50
+      [ Translate (-280) 260 $ Color white $ rectangleSolid 210 50
+      , Translate (-280) 260 $ Color black $ rectangleWire 210 50
       , Translate (-380) 270 $ Color blue  $ Scale 0.11 0.11 $ Text $ (name store)
       , Translate (-380) 255 $ Color red   $ Scale 0.11 0.11 $ Text $ (errorMsg store)
       , Translate (-380) 240 $ Color black $ Scale 0.09 0.09 $ Text $ "Use 'l' to load and parse a file"
