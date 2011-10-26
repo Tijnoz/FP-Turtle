@@ -53,6 +53,9 @@ parser _ _        = error "Unexpected end of string"
 
 -- Parse a number
 parseNumber n@(':':xs) = parseVariable n
+parseNumber n@('-':xs) = ('-':p, r)
+    where
+        (p,r) = parseNatNumber xs
 parseNumber n@(x:xs)   = parseNatNumber n
 parseNumber _          = error "Expected number or variable, but none found (2)"
 
@@ -66,8 +69,8 @@ parseVariable [] = ([],[])
 
 -- Parse a natural number
 parseNatNumber (x:xs)
-    | isDigit x || x == '-'    = (x : p, ps)
-    | otherwise                = ([], x:xs)
+    | isDigit x       = (x : p, ps)
+    | otherwise       = ([], x:xs)
     where
         (p, ps) = parseNatNumber xs
 parseNatNumber [] = ([],[])
@@ -102,9 +105,9 @@ calc Power x y = x^(floor y)
 
 -- Get value
 getVal argmap s
-    | (all isDigit s) = read s
-    | may == Nothing  = error $ "Argument " ++ s ++ " undefined"
-    | otherwise       = read param
+    | (all (`elem` "0123456789-") s) = read s
+    | may == Nothing                 = error $ "Argument " ++ s ++ " undefined"
+    | otherwise                      = read param
     where
         may = lookup s argmap
         Just param = may
