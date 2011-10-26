@@ -13,7 +13,7 @@ data Turtle = Turtle
     , actions   :: [Action]
     } deriving (Show, Eq)
     
-data Action = Forward Float | Turn Int | PenUp | PenDown | ChangeColor Color | GoTo Float Float | NoOp | Break | Clear
+data Action = Forward Float | Turn Int | PenUp | PenDown | ChangeColor Color | GoTo Float Float | NoOp | Clear
     deriving (Show, Eq)
 
 
@@ -58,8 +58,14 @@ execAction t (Turn dAng) = (t', Blank)
 execAction t (PenUp)         = (t {pendown=False}, Blank)
 execAction t (PenDown)       = (t {pendown=True}, Blank)
 execAction t (ChangeColor c) = (t {col=c}, Blank)   
-execAction t (NoOp)          = (t, Blank)
-execAction t (Break)         = (t, Blank)
+execAction t (NoOp)          = (t, Pictures [Blank]) -- not just Blank because this has to slow down drawing in some way
 execAction t (Clear)         = (t, Color white $ rectangleSolid 1000 1000)
+
+execActionWhileNotBlank t []      = (t, Blank, []) 
+execActionWhileNotBlank t (ac:acs)
+    | o == Blank = execActionWhileNotBlank t' acs
+    | otherwise  = (t', o, acs)
+    where
+        (t', o) = execAction t ac
 
 degToRad deg = deg * pi / 180
