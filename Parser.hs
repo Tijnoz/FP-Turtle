@@ -104,7 +104,7 @@ nativeStrToAction' "clear" []      = [Clear]
 nativeStrToAction' "clear" _       = error "Wrong use of clear. Expected no arguments."
 nativeStrToAction' x _             = error ("Incorrect call of nativeStrToAction: " ++ x ++ " is not a valid function.")
 
-isNumber s = all (`elem` "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:+-*%/^.") s
+isNumber s = all (`elem` "()0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:+-*%/^.") s
 
 -- Checks whether a break must occur
 strToDoBreak :: String -> Bool
