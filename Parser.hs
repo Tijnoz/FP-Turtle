@@ -8,6 +8,7 @@ import qualified Data.Map as Map
 import Data.Char (isSpace,isDigit)
 import Debug.Trace
 import Eval
+import Numeric (showFFloat)
 
 type ParsedFunction = (String,([String],[String]))
 
@@ -133,4 +134,5 @@ mkParsable argmap (l:ls) = ((head elems)++" "++(subParams)) : (mkParsable argmap
     where
         elems = words l
         subArgs = tail elems
-        subParams = unwords $ map (show . (evalA argmap)) subArgs -- This seems stupid, but we parse it as a string
+        subParams = unwords [showFFloat (Nothing) (evalA argmap a) ""  | a <- subArgs]
+        --subParams = unwords $ map (show . (evalA argmap)) subArgs -- This seems stupid, but we parse it as a string
