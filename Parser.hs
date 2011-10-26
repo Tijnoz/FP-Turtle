@@ -60,7 +60,7 @@ strToRepeat pFuncs ls = (acs, ls')
     where
         (cmds,ls') = splitAtEnd ls -- "end" is not in ls' anymore
         args  = tail . words . head $ ls
-        count = read(head args)
+        count = floor . eval . head $ args
         acs   = concat $ replicate count (parseAc pFuncs (tail cmds))
 
 -- Helper method to split a block at the appropriate 'end'

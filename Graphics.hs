@@ -73,11 +73,11 @@ handleEvent store (File filename (TXTFile input))
         store' = store {turtle=t, code=input, name=filename, errorMsg=""}
     
 --- Handle drawing of picture if not done yet
-handleEvent store@(Store {turtle=t@(Turtle {actions=acs@(ac:_)})}) _ = (store', [DrawPicture $ Pictures [p,drawInformation store']])
+handleEvent store@(Store {turtle=t@(Turtle {actions=acs@(_:_)})}) _ = (store', [DrawPicture $ Pictures [p,drawInformation store']])
     where
         (t', p, acs') = execActionWhileNotBlank t acs
         t'' = t' {actions=acs'}
-        store' = store {turtle=t'', errorMsg=if null acs then "Done drawing picture" else ""}
+        store' = store {turtle=t'', errorMsg=if null acs || null acs' then "Done drawing picture" else ""}
 
 
 --- Unhandled event handler
