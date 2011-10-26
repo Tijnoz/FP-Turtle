@@ -69,7 +69,7 @@ parseVariable [] = ([],[])
 
 -- Parse a natural number
 parseNatNumber (x:xs)
-    | isDigit x       = (x : p, ps)
+    | isDigit x || x == '.' = (x : p, ps)
     | otherwise       = ([], x:xs)
     where
         (p, ps) = parseNatNumber xs
@@ -87,9 +87,9 @@ parseEnd x@(_:xs) = (False, x)
 parseEnd []       = (False, "")
 
 -- Evaluate an expression. evalA accepts an argument list.
-eval :: String -> Int
+eval :: String -> Float
 eval = evalA []
-evalA argmap = floor . (evalR argmap) . parse 
+evalA argmap = (evalR argmap) . parse 
 
 evalR argmap (Leaf n)       = getVal argmap n
 evalR argmap (Node o t1 t2) = calc o (evalR argmap t1) (evalR argmap t2)
@@ -105,9 +105,9 @@ calc Power x y = x^(floor y)
 
 -- Get value
 getVal argmap s
-    | (all (`elem` "0123456789-") s) = read s
-    | may == Nothing                 = error $ "Argument " ++ s ++ " undefined"
-    | otherwise                      = read param
+    | (all (`elem` "0123456789-.") s) = read s
+    | may == Nothing                  = error $ "Argument " ++ s ++ " undefined"
+    | otherwise                       = read param
     where
         may = lookup s argmap
         Just param = may

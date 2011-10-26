@@ -83,27 +83,27 @@ nativeStrToAction str = nativeStrToAction' cmd args
 
 -- Function that takes the function name and the argument list and retunrs the action
 nativeStrToAction' :: String -> [String] -> [Action]
-nativeStrToAction' "forward" [s]   | isNumber s = [Forward (fromIntegral . eval $ s)]
+nativeStrToAction' "forward" [s]   | isNumber s = [Forward (eval s)]
 nativeStrToAction' "forward" _                  = error "Wrong use of forward. Expected one numeric argument."
-nativeStrToAction' "left" [s]      | isNumber s = [Turn (eval s)]
+nativeStrToAction' "left" [s]      | isNumber s = [Turn (floor . eval $ s)]
 nativeStrToAction' "left" _                     = error "Wrong use of left. Expected one numeric argument."
-nativeStrToAction' "right" [s]     | isNumber s = [Turn (360-(eval s))]
+nativeStrToAction' "right" [s]     | isNumber s = [Turn (360-(floor . eval $  s))]
 nativeStrToAction' "right" _                    = error "Wrong use of right. Expected one numeric argument."
-nativeStrToAction' "move" [x,y]    | isNumber x && isNumber y = [GoTo (fromIntegral . eval $ x) (fromIntegral . eval $ y)]
+nativeStrToAction' "move" [x,y]    | isNumber x && isNumber y = [GoTo (eval x) (eval y)]
 nativeStrToAction' "move" _                                   = error "Wrong use of move. Expected two numeric arguments."
 nativeStrToAction' "pendown" []    = [PenDown]
 nativeStrToAction' "pendown" _     = error "Wrong use of pendown. Expected no arguments."
 nativeStrToAction' "penup" []      = [PenUp]
 nativeStrToAction' "penup" _       = error "Wrong use of penup. Expected no arguments."
-nativeStrToAction' "color" [r,g,b] | isNumber r && isNumber g && isNumber b = [ChangeColor (makeColor8 (eval r) (eval g) (eval b) 255)]
+nativeStrToAction' "color" [r,g,b] | isNumber r && isNumber g && isNumber b = [ChangeColor (makeColor8 (floor . eval $ r) (floor . eval $ g) (floor . eval $ b) 255)]
 nativeStrToAction' "color" _                                                = error "Wrong use of color. Expected three numeric arguments."
-nativeStrToAction' "sleep" [s]     | isNumber s = replicate (eval s) NoOp
+nativeStrToAction' "sleep" [s]     | isNumber s = replicate (floor . eval $ s) NoOp
 nativeStrToAction' "sleep" _                    = error "Wrong use of sleep. Expected one numeric argument."
 nativeStrToAction' "clear" []      = [Clear]
 nativeStrToAction' "clear" _       = error "Wrong use of clear. Expected no arguments."
 nativeStrToAction' x _             = error ("Incorrect call of nativeStrToAction: " ++ x ++ " is not a valid function.")
 
-isNumber s = all (`elem` "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:+-*%/^") s
+isNumber s = all (`elem` "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:+-*%/^.") s
 
 -- Checks whether a break must occur
 strToDoBreak :: String -> Bool
