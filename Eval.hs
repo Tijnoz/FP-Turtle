@@ -66,8 +66,8 @@ parseVariable [] = ([],[])
 
 -- Parse a natural number
 parseNatNumber (x:xs)
-    | isDigit x = (x : p, ps)
-    | otherwise = ([], x:xs)
+    | isDigit x || x == '-'    = (x : p, ps)
+    | otherwise                = ([], x:xs)
     where
         (p, ps) = parseNatNumber xs
 parseNatNumber [] = ([],[])
