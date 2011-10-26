@@ -94,7 +94,7 @@ evalR argmap (Node o t1 t2) = calc o (evalR argmap t1) (evalR argmap t2)
 -- Calculations
 calc :: Operator -> Float -> Float -> Float
 calc Plus x y = x+y
-calc Minus x y = x+y
+calc Minus x y = x-y
 calc Times x y = x*y
 calc Divide x y = x/y
 calc Modulus x y = fromIntegral $ (floor x) `mod` (floor y)

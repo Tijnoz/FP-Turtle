@@ -21,16 +21,19 @@ parseAcs string = parseAc [] (lines string)
 parseAc :: [ParsedFunction] -> [String] -> [Action]
 parseAc _ [] = []
 parseAc pFuncs str@(l:ls)
-    | null elems             = parseAc pFuncs ls                                        -- Skip empty lines
-    | head l == '#'          = parseAc pFuncs ls                                        -- Skip comments
-    | key == "do"            = parseAc (pFuncs++[dFunc]) dLines                         -- Parse do blocks
-    | key == "repeat"        = rAcs ++ parseAc (pFuncs) rLines                          -- Parse repeat blocks
-    | key `elem` nativeFuncs = nAc ++ parseAc pFuncs ls                                 -- Parse native functions
-    | key `elem` parsedFuncs = pAcs ++ parseAc pFuncs ls                                -- Parse previously parsed functions
-    | otherwise              = error $ "Unknown command " ++ key ++ " in line: " ++ l   -- Error!
+    | null elems || head key == '#'  = parseAc pFuncs ls                                        -- Skip comments and empty lines
+    | key == "breakwhen" && doBreak  = []                                                       -- Stop further execution when break occurs
+    | key == "breakwhen"             = parseAc pFuncs ls                                        -- Skip breakwhen when no break required
+    | key == "do"                    = parseAc (pFuncs++[dFunc]) dLines                         -- Parse do blocks
+    | key == "repeat"                = rAcs ++ parseAc (pFuncs) rLines                          -- Parse repeat blocks
+    | key `elem` nativeFuncs         = nAc ++ parseAc pFuncs ls                                 -- Parse native functions
+    | key `elem` parsedFuncs         = pAcs ++ parseAc pFuncs ls                                -- Parse previously parsed functions
+    | otherwise                      = error $ "Unknown command " ++ key ++ " in line: " ++ l   -- Error!
     where
         elems = words l
         key = head elems
+        --
+        doBreak = strToDoBreak l
         --
         (dFunc, dLines) = strToDo str
         --
@@ -100,7 +103,15 @@ nativeStrToAction' "clear" []      = [Clear]
 nativeStrToAction' "clear" _       = error "Wrong use of clear. Expected no arguments."
 nativeStrToAction' x _             = error ("Incorrect call of nativeStrToAction: " ++ x ++ " is not a valid function.")
 
-isNumber s = True -- all isDigit s
+isNumber s = all (`elem` "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:+-*%/^") s
+
+-- Checks whether a break must occur
+strToDoBreak :: String -> Bool
+strToDoBreak str
+    | cmd == "breakwhen" && (length args == 1) = (eval (head args) <= 0)
+    | cmd == "breakwhen"                       = error "Expected one argument for breakwehen."
+    where
+        (cmd:args) = words str
 
 -- Converts a parsed function to actions. Given are the list of parsed functions and the call.
 pFuncToAcs :: [ParsedFunction] -> String -> [Action]
