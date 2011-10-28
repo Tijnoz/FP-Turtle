@@ -1,0 +1,18 @@
+pendown
+
+color 0 255 0
+
+do circle
+  repeat 18
+  forward 40
+  left 20
+  end
+end
+
+do ball
+  circle
+  left 17
+ball
+end
+
+ball

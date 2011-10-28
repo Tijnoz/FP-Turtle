@@ -49,5 +49,10 @@ nativeEx.txt : This example shows the most primitive turtle functions such as re
 modulesEx.txt : This example illustrates some basic functions the turtle can do. Do and repeat blocks, nesting and basic forward/right functions are used.
 flowerEx.txt : Draws multiple squares while turning, creating something that looks like a flower.
 basicRecurEx.txt : This shows a basic recursing algorithm going towards the left upper corner.
+circlesEx.txt : This shows a recursing circle algorithm which doesn't fully accomplish a circle on each rotation, causing it to make a big green circle if left running long enough.
+fracTreeEx.txt : This example shows recursion with a break when the size gets too small, together with calculations. The result is a realistic looking fractional tree.
+snowflakeEx.txt : This example shows a Koch snowflake, recursively drawn. The level (detail) of the koch snowflake can be changed within the file. This is currently set to 5. Setting this higher than 7 is not recommended.
+//An example showing a rainbow with a gradient of colors was under production, but sadly we didn't find time to finish it =(
+
 
 

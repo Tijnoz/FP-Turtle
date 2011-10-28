@@ -1,0 +1,25 @@
+do tree :s
+    breakwhen (:s-5)
+    forward (:s/3)
+    left 30 
+        tree (:s*(2/3)) 
+    right 30
+        forward (:s/6)
+    right 25 
+        tree (:s/2) 
+    left 25
+        forward (:s/3)
+    right 25 
+        tree (:s/2)
+    left 25
+        forward (:s/6)
+    left 180
+        forward :s
+    right 180
+end
+
+ 
+color 255 0 0
+move 0 -200
+pendown
+tree 300

@@ -1,0 +1,36 @@
+do snowflake :s :l
+  breakwhen :l
+  nobreakflake :s (:l-1) 
+  snowflake (:s/3) (:l-1)
+  left 60
+  snowflake (:s/3) (:l-1)
+  right 120
+  snowflake (:s/3) (:l-1)
+  left 60
+  snowflake (:s/3) (:l-1)
+end
+
+do nobreakflake :z :x 
+  breakwhen (1-:x)
+  forward :z
+end
+
+do flakes :x
+  breakwhen :x
+  repeat 3
+    snowflake 300 :x
+    right 120
+  end
+  flakes (:x+1)
+end
+
+penup
+move -200 0
+right 60
+pendown
+
+## het level van de snowflake staat aan het einde van snowflake.
+repeat 3
+    snowflake 300 5
+    right 120
+end
